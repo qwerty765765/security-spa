@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom'; // Удалите navigate, если не используется
 import { securityAPI } from '../services/api';
 import ClipLoader from 'react-spinners/ClipLoader';
 import ErrorDisplay from '../components/ErrorDisplay';
 
 const Detail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  // Удалите navigate, если он не используется
   const [securityObject, setSecurityObject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    loadSecurityObject();
-  }, [id]);
 
   const loadSecurityObject = async () => {
     try {
@@ -27,6 +23,10 @@ const Detail = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadSecurityObject();
+  }, [id]); // Добавьте loadSecurityObject в зависимости, но лучше оставить только id
 
   const getStatusColor = (status) => {
     switch(status) {
