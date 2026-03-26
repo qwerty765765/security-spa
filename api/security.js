@@ -1,11 +1,41 @@
-// Импортируем данные из db.json
-const db = require('../db.json');
+// Начальные данные
+let securityObjects = [
+  {
+    id: 1,
+    name: 'Жилой комплекс «Безопасный дом»',
+    type: 'Комплексная система',
+    address: 'ул. Ленина, 15',
+    cameras: 48,
+    staff: 12,
+    status: 'maintenance',
+    description: 'Полный комплекс мер безопасности включает видеонаблюдение по периметру, контроль доступа в подъезды и на парковку, круглосуточное патрулирование территории.',
+    emergency_contacts: '+7 (495) 123-45-67'
+  },
+  {
+    id: 2,
+    name: 'Бизнес-центр "Кристалл"',
+    type: 'Контроль доступа',
+    address: 'пр. Мира, 78',
+    cameras: 24,
+    staff: 8,
+    status: 'active',
+    description: 'Современная система контроля доступа с биометрией',
+    emergency_contacts: '+7 (495) 987-65-43'
+  },
+  {
+    id: 3,
+    name: 'Торговый центр "Гранд"',
+    type: 'Охранная сигнализация',
+    address: 'ул. Садовая, 42',
+    cameras: 8,
+    staff: 6,
+    status: 'maintenance',
+    description: 'Модернизация системы сигнализации',
+    emergency_contacts: '+7 (495) 555-12-34'
+  }
+];
 
-// Копируем данные для работы
-let securityObjects = db.security || [];
-let nextId = securityObjects.length > 0 
-  ? Math.max(...securityObjects.map(obj => obj.id)) + 1 
-  : 1;
+let nextId = 4;
 
 export default async function handler(req, res) {
   // Настройка CORS
@@ -18,19 +48,26 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Получаем ID из URL: /api/security/123
-  const urlParts = req.url.split('/');
-  const id = urlParts[urlParts.length - 1];
-  const isNumericId = !isNaN(parseInt(id)) && id !== 'security';
+  console.log('API Request:', req.method, req.url);
 
   try {
+    // Получаем путь из URL
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathParts = url.pathname.split('/').filter(part => part !== '');
+    
+    // Убираем 'api' и 'security' из пути
+    const id = pathParts.length > 2 ? pathParts[2] : null;
+    
+    console.log('ID:', id);
+
     // GET /api/security - получить все объекты
-    if (req.method === 'GET' && (!isNumericId || urlParts.length === 3)) {
+    if (req.method === 'GET' && !id) {
+      console.log('Returning all objects:', securityObjects.length);
       return res.status(200).json(securityObjects);
     }
     
     // GET /api/security/:id - получить объект по ID
-    if (req.method === 'GET' && isNumericId) {
+    if (req.method === 'GET' && id) {
       const object = securityObjects.find(obj => obj.id === parseInt(id));
       if (!object) {
         return res.status(404).json({ message: 'Объект не найден' });
@@ -48,11 +85,12 @@ export default async function handler(req, res) {
         staff: parseInt(data.staff) || 0
       };
       securityObjects.push(newObject);
+      console.log('Created new object:', newObject);
       return res.status(201).json(newObject);
     }
     
     // PUT /api/security/:id - обновить объект
-    if (req.method === 'PUT' && isNumericId) {
+    if (req.method === 'PUT' && id) {
       const index = securityObjects.findIndex(obj => obj.id === parseInt(id));
       if (index === -1) {
         return res.status(404).json({ message: 'Объект не найден' });
@@ -67,22 +105,25 @@ export default async function handler(req, res) {
       };
       
       securityObjects[index] = updatedObject;
+      console.log('Updated object:', updatedObject);
       return res.status(200).json(updatedObject);
     }
     
     // DELETE /api/security/:id - удалить объект
-    if (req.method === 'DELETE' && isNumericId) {
+    if (req.method === 'DELETE' && id) {
       const index = securityObjects.findIndex(obj => obj.id === parseInt(id));
       if (index === -1) {
         return res.status(404).json({ message: 'Объект не найден' });
       }
       
       securityObjects.splice(index, 1);
+      console.log('Deleted object with id:', id);
       return res.status(200).json({ message: 'Объект удален' });
     }
     
     // Если метод не поддерживается
-    return res.status(405).json({ message: 'Метод не поддерживается' });
+    console.log('Method not found:', req.method, req.url);
+    return res.status(404).json({ message: 'Маршрут не найден' });
     
   } catch (error) {
     console.error('API Error:', error);
