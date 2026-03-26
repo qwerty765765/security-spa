@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { securityAPI } from '../services/api';
 import ClipLoader from 'react-spinners/ClipLoader';
@@ -28,11 +28,11 @@ const Form = () => {
   const validatePhoneNumber = (phone) => {
     if (!phone) return true; // Поле необязательное
     
-    // Регулярное выражение для проверки российских номеров телефона
-    const phoneRegex = /^(\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+    // Исправленное регулярное выражение без лишних экранирований
+    const phoneRegex = /^(\+7|8)[\s-]?\(?[0-9]{3}\)?[\s-]?[0-9]{3}[\s-]?[0-9]{2}[\s-]?[0-9]{2}$/;
     
     // Альтернативное более простое выражение
-    const simplePhoneRegex = /^[\+\d\s\-\(\)]{10,20}$/;
+    const simplePhoneRegex = /^[+\d\s-()]{10,20}$/;
     
     if (!phoneRegex.test(phone) && !simplePhoneRegex.test(phone)) {
       return false;
@@ -47,13 +47,7 @@ const Form = () => {
     return true;
   };
 
-  useEffect(() => {
-    if (isEditMode) {
-      loadSecurityObject();
-    }
-  }, [id]);
-
-  const loadSecurityObject = async () => {
+  const loadSecurityObject = useCallback(async () => {
     try {
       setLoading(true);
       const data = await securityAPI.getById(id);
@@ -72,7 +66,13 @@ const Form = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      loadSecurityObject();
+    }
+  }, [isEditMode, loadSecurityObject]);
 
   const validateForm = () => {
     const errors = {};
